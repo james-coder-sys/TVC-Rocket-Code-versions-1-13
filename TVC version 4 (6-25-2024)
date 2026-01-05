@@ -1,0 +1,224 @@
+#include <Wire.h>
+#include "Arduino_BMI270_BMM150.h"
+#include <Servo.h>
+Servo servoX;
+Servo servoY;
+float posX = 0;
+float posY = 0;
+unsigned long oldTime=0;
+float Gyroangley = 0, Gyroanglex = 0;
+float gyroX = 0, gyroY = 0;
+float accelX = 0, accelY = 0;
+float prevgyroX = 0, prevgyroY = 0;
+float prevaccelX = 0, prevaccelY = 0;
+float gyroYoffset= 0, gyroXoffset= 0;
+float rawgyroY = 0, rawgyroX = 0;
+float angleY= 0, angleX = 0;
+int counter = 0;
+float avraccelY = 0, avraccelX = 0;
+float deltaTime;
+float pastaccelY = 0, pastaccelX = 0;
+float ax, ay, az;
+float accelrateY, gyrorateY, accelrateX, gyrorateX; 
+float rateY= 0, rateX= 0;
+float errorY = 0, errorX = 0;
+float outX = 0;
+float outY = 0;
+float prevoutX = 0;
+float prevoutY = 0;
+float TVC_ChangeX = 0;
+float TVC_ChangeY = 0;
+float P = 1;
+float I = .0008;
+float D = .2;
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1);
+  }
+  Serial.print("Gyroscope sample rate = ");
+  Serial.print(IMU.gyroscopeSampleRate());
+  Serial.println(" Hz");
+  Serial.println();
+  Serial.println("Gyroscope in degrees/second");
+  Serial.println("X\tY\tZ");
+  servoX.attach(6);
+  servoY.attach(9);
+  servoX.write(0);
+  servoY.write(0);
+}
+
+void loop() {
+float x, y, z;
+  if (IMU.gyroscopeAvailable()) {
+    IMU.readGyroscope(x, y, z);
+  unsigned long currentTime = millis();
+  unsigned long deltaTime = currentTime - oldTime;
+  oldTime = currentTime;
+  Gyroangley += (y*deltaTime)/1000;
+  Gyroanglex += (x*deltaTime)/1000;
+  rawgyroX = Gyroanglex;
+  rawgyroY = Gyroangley;
+  gyrorateY = y;
+  gyrorateX = x;
+  }
+  // Read accelerometer and gyroscope data in degree 
+  gyroY = rawgyroY-gyroYoffset;
+angleY = .45*gyroY + .55*accelY;
+  gyroX = rawgyroX-gyroXoffset;
+angleX = .45*gyroX + .55*accelX;
+ Serial.print(prevoutX);
+ Serial.print(" ");
+  // Update previous angle values
+  if (counter>17){
+  avraccelY = prevaccelY;
+  prevgyroY = gyroY;
+  counter=1;
+  prevaccelY = 0;
+  avraccelX = prevaccelX;
+  prevgyroX = gyroX;
+  prevaccelX = 0;
+  gyroXoffset = (rawgyroX - avraccelX);
+  gyroYoffset = (rawgyroY- avraccelY);
+  }
+  else{
+  counter = counter+1;
+  prevaccelY=accelY;
+  prevaccelX=accelX;
+  gyroXoffset = (gyroXoffset+(rawgyroX*.0003));
+  gyroYoffset = (gyroYoffset-(rawgyroY*.0003));
+  }
+  if (IMU.accelerationAvailable()) {
+    IMU.readAcceleration(ax, ay, az);
+  pastaccelY = (atan2(ax, sqrt(ay * ay + az * az)) * 180 / PI);
+  pastaccelX = -(atan2(ay, sqrt(ax * ax + az * az)) * 180 / PI);
+  }
+  delay(20);
+  if (IMU.accelerationAvailable()) {
+    IMU.readAcceleration(ax, ay, az);
+accelY = (atan2(ax, sqrt(ay * ay + az * az)) * 180 / PI);
+accelX = -(atan2(ay, sqrt(ax * ax + az * az)) * 180 / PI);
+  }
+accelrateY = 4*(accelY-pastaccelY);
+rateY = .15*(accelrateY)+.85*(gyrorateY);
+accelrateX = 4*(accelX-pastaccelX);
+rateX = .15*(accelrateX)+.85*(gyrorateX);
+Serial.print(outX);
+Serial.print(" ");
+errorY += angleY;
+errorX += angleX;
+outX = ((P*angleX)+(I*errorX)+(D*rateX));
+outY = ((P*angleY)+(I*errorY)+(D*rateY));
+TVC_ChangeX = (outX-prevoutX);
+TVC_ChangeY = (outY-prevoutY);
+Serial.print(TVC_ChangeX);
+Serial.println(" ");
+if (TVC_ChangeX>0){
+  if (TVC_ChangeX<2){
+  for (posX = (prevoutX+90); posX <= (outX+90); posX += .5) { // goes from 0 degrees to 180 degrees
+    // in steps of .5 degree
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+ else if (TVC_ChangeX<4){
+  for (posX = (prevoutX+90); posX <= (outX+90); posX += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+  else if (TVC_ChangeX<10){
+  for (posX = (prevoutX+90); posX <= (outX+90); posX += 2) { // goes from 0 degrees to 180 degrees
+    // in steps of 2 degrees
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+  else{
+  for (posX = (prevoutX+90); posX <= (outX+90); posX += 3) { // goes from 0 degrees to 180 degrees
+    // in steps of 3 degrees
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+  }
+}
+else {
+ if (TVC_ChangeX>-2){
+ for (posX = (prevoutX+90); posX >= (outX+90); posX -= .5) { // goes from 0 degrees to 180 degrees
+    // in steps of .5 degree
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+ else if (TVC_ChangeX>-4){
+   for (posX = (prevoutX+90); posX >= (outX+90); posX -= 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+ else if (TVC_ChangeX>-10){
+   for (posX = (prevoutX+90); posX >= (outX+90); posX -= 2) { // goes from 0 degrees to 180 degrees
+    // in steps of 2 degrees
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+ }
+  else{
+  for (posX = (prevoutX+90); posX >= (outX+90); posX -= 3) { // goes from 0 degrees to 180 degrees
+    // in steps of 3 degrees
+    servoX.write(posX);              // tell servo to go to position in variable 'pos'                      
+  }
+  }
+}
+if (TVC_ChangeY>0){
+  if (TVC_ChangeY<2){
+  for (posY = (prevoutY+98); posY <= (outY+98); posY += .5) { // goes from 0 degrees to 180 degrees
+    // in steps of .5 degree
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+ else if (TVC_ChangeY<4){
+ for (posY = (prevoutY+98); posY <= (outY+98); posY += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+  else if (TVC_ChangeY<10){
+  for (posY = (prevoutY+98); posY <= (outY+98); posY += 2) { // goes from 0 degrees to 180 degrees
+    // in steps of 2 degrees
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+  else{
+  for (posY = (prevoutY+98); posY <= (outY+98); posY += 3) { // goes from 0 degrees to 180 degrees
+    // in steps of 3 degrees
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+  }
+}
+else if (TVC_ChangeY<0){
+ if (TVC_ChangeY>-2){
+ for (posY = (prevoutY+98); posY >= (outY+98); posY -= .5) { // goes from 0 degrees to 180 degrees
+    // in steps of .5 degree
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+ else if (TVC_ChangeY>-4){
+   for (posY = (prevoutY+98); posY >= (outY+98); posY -= 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+ else if (TVC_ChangeY>-10){
+    for (posY = (prevoutY+98); posY >= (outY+98); posY -= 2) { // goes from 0 degrees to 180 degrees
+    // in steps of 2 degrees
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+ }
+  else{
+   for (posY = (prevoutY+98); posY >= (outY+98); posY -= 3) { // goes from 0 degrees to 180 degrees
+    // in steps of 3 degrees
+    servoY.write(posY);              // tell servo to go to position in variable 'pos'                      
+  }
+  }
+}
+prevoutX= outX;
+prevoutY = outY;
+delay(20);
+}
