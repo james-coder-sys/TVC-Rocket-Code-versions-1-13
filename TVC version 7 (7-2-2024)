@@ -217,13 +217,13 @@ if (TVC_ChangeX>0){
  }
   else if (TVC_ChangeX<10){
   for (posX = (prevoutX+91); posX <= (outX+91); posX += 2.5) { // goes from 0 degrees to 180 degrees
-    // in steps of 2 degrees
+    // in steps of 2.5 degrees
     servoX.write(posX);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
  }
   else{
   for (posX = (prevoutX+91); posX <= (outX+91); posX += 4) { // goes from 0 degrees to 180 degrees
-    // in steps of 3 degrees
+    // in steps of 4 degrees
     servoX.write(posX);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
   }
@@ -243,13 +243,13 @@ else {
  }
  else if (TVC_ChangeX>-10){
    for (posX = (prevoutX+91); posX >= (outX+91); posX -= 2.5) { // goes from 0 degrees to 180 degrees
-    // in steps of 2 degrees
+    // in steps of 2.5 degrees
     servoX.write(posX);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
  }
   else{
   for (posX = (prevoutX+91); posX >= (outX+91); posX -= 4) { // goes from 0 degrees to 180 degrees
-    // in steps of 3 degrees
+    // in steps of 4 degrees
     servoX.write(posX);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
   }
@@ -271,13 +271,13 @@ if (TVC_ChangeY>0){
  }
   else if (TVC_ChangeY<10){
   for (posY = (prevoutY+100); posY <= (outY+100); posY += 2.5) { // goes from 0 degrees to 180 degrees
-    // in steps of 2 degrees
+    // in steps of 2.5 degrees
     servoY.write(posY);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
  }
   else{
   for (posY = (prevoutY+100); posY <= (outY+100); posY += 4) { // goes from 0 degrees to 180 degrees
-    // in steps of 3 degrees
+    // in steps of 4 degrees
     servoY.write(posY);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
   }
@@ -297,13 +297,13 @@ else if (TVC_ChangeY<0){
  }
  else if (TVC_ChangeY>-10){
     for (posY = (prevoutY+100); posY >= (outY+100); posY -= 2.5) { // goes from 0 degrees to 180 degrees
-    // in steps of 2 degrees
+    // in steps of 2.5 degrees
     servoY.write(posY);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
  }
   else{
    for (posY = (prevoutY+100); posY >= (outY+100); posY -= 4) { // goes from 0 degrees to 180 degrees
-    // in steps of 3 degrees
+    // in steps of 4 degrees
     servoY.write(posY);              // tell servo to go to position in variable 'pos'                      // waits 15 ms for the servo to reach the position
   }
   }
