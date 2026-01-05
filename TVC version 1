@@ -1,0 +1,80 @@
+#include <Wire.h>
+#include "Arduino_BMI270_BMM150.h"
+unsigned long oldTime=0;
+float Gyroangley = 0, Gyroanglex = 0;
+float gyroX = 0, gyroY = 0;
+float accelX = 0, accelY = 0;
+float prevgyroX = 0, prevgyroY = 0;
+float prevaccelX = 0, prevaccelY = 0;
+float gyroYoffset= 0;
+float rawgyroY = 0, rawgyroX = 0;
+float angleY= 0;
+int counter = 0;
+float avraccelY = 0;
+float deltaTime;
+float pastaccelY = 0;
+float ax, ay, az;
+float accelrateY, gyrorateY; 
+float rateY= 0;
+void setup() {
+  Wire.begin();
+  Serial.begin(9600);
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1);
+  }
+  Serial.print("Gyroscope sample rate = ");
+  Serial.print(IMU.gyroscopeSampleRate());
+  Serial.println(" Hz");
+  Serial.println();
+  Serial.println("Gyroscope in degrees/second");
+  Serial.println("X\tY\tZ");
+}
+
+void loop() {
+float x, y, z;
+
+  if (IMU.gyroscopeAvailable()) {
+    IMU.readGyroscope(x, y, z);
+  unsigned long currentTime = millis();
+  unsigned long deltaTime = currentTime - oldTime;
+  oldTime = currentTime;
+  Gyroangley += (y*deltaTime)/1000;
+  Gyroanglex += (x*deltaTime)/1000;
+  rawgyroX = Gyroanglex;
+  rawgyroY = Gyroangley;
+  gyrorateY = y;
+  }
+  // Read accelerometer and gyroscope data in degree 
+  gyroYoffset = rawgyroY - avraccelY;
+  gyroY = rawgyroY-gyroYoffset;
+angleY = .25*gyroY + .75*accelY;
+Serial.print(gyrorateY);
+ Serial.print(" ");
+  // Update previous angle values
+  if (counter>4){
+  avraccelY = prevaccelY/4;
+  prevgyroY = gyroY;
+  counter=1;
+  prevaccelY = 0;
+  }
+  else{
+  counter = counter+1;
+  prevaccelY+=accelY;
+  }
+  if (IMU.accelerationAvailable()) {
+    IMU.readAcceleration(ax, ay, az);
+  pastaccelY = -(atan2(ax, sqrt(ay * ay + az * az)) * 180 / PI);
+  }
+  delay(20);
+  if (IMU.accelerationAvailable()) {
+    IMU.readAcceleration(ax, ay, az);
+accelY = -(atan2(ax, sqrt(ay * ay + az * az)) * 180 / PI);
+accelX = -(atan2(ay, sqrt(ax * ax + az * az)) * 180 / PI);
+  }
+accelrateY = -50*(accelY-pastaccelY);
+rateY = .15*(accelrateY)+.85*(gyrorateY);
+Serial.print(rateY);
+Serial.print(" ");
+Serial.println(accelrateY);
+}
